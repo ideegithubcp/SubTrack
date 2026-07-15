@@ -104,6 +104,11 @@
   .row-meta { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
   .row-meta .dot-sep { opacity: 0.5; }
   .tag { font-size: 0.66rem; padding: 2px 8px; border-radius: 99px; background: rgba(250,178,25,0.15); color: var(--status-warning); border: 1px solid rgba(250,178,25,0.3); }
+  .benefit-tag {
+    font-size: 0.66rem; padding: 2px 8px; border-radius: 99px; font-weight: 600; font-family: inherit;
+    background: rgba(34,211,238,0.12); color: var(--accent); border: 1px solid rgba(34,211,238,0.3); cursor: pointer;
+  }
+  .benefit-tag:hover { background: rgba(34,211,238,0.2); }
   .row-renewal { text-align: right; min-width: 92px; flex-shrink: 0; }
   .row-renewal .rdate { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
   .due-pill { font-size: 0.66rem; padding: 2px 8px; border-radius: 99px; font-weight: 700; display: inline-block; margin-top: 3px; }
@@ -116,6 +121,13 @@
   .cancel-check input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
   .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 4px; border-radius: 6px; }
   .icon-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+  /* ── benefits panel (click-to-expand) ── */
+  .benefits-panel { display: none; margin-top: 6px; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border); border-radius: 10px; }
+  .benefits-panel.open { display: block; }
+  .benefits-title { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .benefits-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .benefit-chip { font-size: 0.74rem; padding: 4px 10px; border-radius: 99px; background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.25); color: var(--text); }
 
   /* rows inside a side-by-side group frame are always narrow — stack them regardless of viewport */
   .group-frame .sub-row { flex-wrap: wrap; }
@@ -145,11 +157,16 @@
   .modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; }
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 5px; }
-  .field input[type=text], .field input[type=number], .field input[type=date], .field select {
+  .field input[type=text], .field input[type=number], .field input[type=date], .field select, .field textarea {
     width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 9px;
-    padding: 10px 12px; color: var(--text); font-size: 0.92rem; outline: none;
+    padding: 10px 12px; color: var(--text); font-size: 0.92rem; outline: none; font-family: inherit;
   }
-  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field-label-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+  .field-label-row label { margin-bottom: 0; }
+  .suggest-btn { background: none; border: none; color: var(--accent); font-size: 0.76rem; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .suggest-btn:hover { text-decoration: underline; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .checkbox-field { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
   .checkbox-field input { width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
@@ -185,7 +202,7 @@
     <form id="subForm" onsubmit="submitForm(event)">
       <div class="field">
         <label>Name</label>
-        <input type="text" id="f-name" placeholder="e.g. Netflix" required />
+        <input type="text" id="f-name" placeholder="e.g. Netflix" required oninput="checkBenefitSuggestion()" />
       </div>
       <div class="field-row">
         <div class="field">
@@ -221,6 +238,13 @@
         <input type="checkbox" id="f-flag" />
         <label for="f-flag">🔔 Remind me to cancel before it renews (avoid getting charged)</label>
       </div>
+      <div class="field">
+        <div class="field-label-row">
+          <label>Benefits (optional, one per line)</label>
+          <button type="button" class="suggest-btn hidden" id="f-suggest-btn" onclick="applySuggestedBenefits()">✨ Use suggested</button>
+        </div>
+        <textarea id="f-benefits" rows="4" placeholder="e.g. Free shipping&#10;Prime Video&#10;5% cashback on Prime Visa"></textarea>
+      </div>
       <button type="submit" class="btn" style="width:100%">Save Subscription</button>
     </form>
   </div>
@@ -232,6 +256,46 @@ const REMINDER_DAYS = 7;
 const SERIES_VARS = ['--series-1','--series-2','--series-3','--series-4','--series-5','--series-6','--series-7','--series-8'];
 let subs = [];
 let editingId = null;
+
+// ── known benefits (offline reference list — this app has no backend, so nothing is "pulled" live) ──
+const BENEFITS_DB = {
+  'amazon prime': ['Free 1-2 day shipping on Amazon', 'Prime Video streaming', 'Prime Music (ad-free)', '5% back with Amazon Prime Visa', 'Whole Foods discounts', 'Prime Reading & Kindle deals'],
+  'prime video': ['Movie & show streaming library', 'Included with Amazon Prime'],
+  'netflix': ['Movie & show streaming library', 'Downloads for offline viewing', 'Multiple simultaneous streams (plan dependent)', 'Netflix Games'],
+  'spotify': ['Ad-free music streaming', 'Offline downloads', 'Unlimited skips', 'High-quality audio'],
+  'apple music': ['Ad-free music streaming', 'Offline downloads', 'Spatial audio / lossless'],
+  'disney': ['Disney, Pixar, Marvel, Star Wars, Nat Geo library', '4K/HDR streaming', 'Downloads for offline viewing'],
+  'youtube premium': ['Ad-free YouTube', 'Background play', 'YouTube Music Premium included', 'Downloads for offline'],
+  'youtube tv': ['Live TV channels', 'Unlimited cloud DVR'],
+  'hulu': ['Next-day TV episodes', 'Movie & show library', 'Live TV (higher tier)'],
+  'hbo': ['HBO & Warner Bros. library', '4K streaming (higher tier)'],
+  'max': ['HBO & Warner Bros. library', '4K streaming (higher tier)'],
+  'apple one': ['iCloud+ storage', 'Apple Music', 'Apple TV+', 'Apple Arcade'],
+  'icloud': ['Extra iCloud storage', 'Device backup', 'Shared family storage'],
+  'apple tv': ['Apple Originals streaming library'],
+  'adobe creative cloud': ['Photoshop, Illustrator, Premiere & full app suite', '100GB+ cloud storage', 'Adobe Fonts', 'Portfolio site'],
+  'costco': ['Warehouse membership pricing', 'Costco Travel & gas discounts', '2% reward (Executive tier)'],
+  'xbox game pass': ['Access to 100s of games', 'Day-one first-party releases', 'Xbox Cloud Gaming', 'EA Play included'],
+  'playstation plus': ['Online multiplayer', 'Monthly free games', 'Game Catalog access (higher tiers)'],
+  'paramount': ['CBS shows & live TV', 'Paramount movie library', 'Live sports'],
+  'peacock': ['NBC shows', 'Live sports (Premier League, WWE)', 'Next-day NBC episodes'],
+  'audible': ['1 credit/month for any audiobook', 'Access to Plus Catalog', 'Discounts on additional titles'],
+  'nytimes': ['Unlimited NYTimes.com & app access', 'NYT Cooking & Games (higher tier)'],
+  'new york times': ['Unlimited NYTimes.com & app access', 'NYT Cooking & Games (higher tier)'],
+  'google one': ['Extra Google Drive/Photos/Gmail storage', 'VPN by Google One (select plans)', 'Family sharing'],
+  'dropbox': ['Extra cloud storage', 'File recovery history', 'Smart sync'],
+  'chatgpt': ['Priority access & faster responses', 'Access to advanced models', 'Higher usage limits'],
+  'linkedin premium': ['InMail credits', 'Who viewed your profile', 'LinkedIn Learning courses'],
+  'sams club': ["Warehouse membership pricing", "Gas & pharmacy discounts"],
+};
+// substring match against sub name, longest key first so "amazon prime" beats a looser "prime" match
+function findBenefitMatch(name) {
+  const n = (name || '').trim().toLowerCase();
+  if (!n) return null;
+  const keys = Object.keys(BENEFITS_DB).sort((a, b) => b.length - a.length);
+  for (const key of keys) if (n.includes(key)) return BENEFITS_DB[key];
+  return null;
+}
 
 // ── persistence ──
 function load() {
@@ -386,32 +450,46 @@ function rowHtml(s) {
   const dueLabel = d < 0 ? 'Overdue' : d === 0 ? 'Today' : d === 1 ? '1 day' : `${d} days`;
   const duePill = !s.cancelled && d <= 7 ? `<span class="due-pill ${d<=2?'critical':'warning'}">${dueLabel}</span>` : '';
   const dotColor = s.cancelled ? 'var(--muted)' : seriesColor(s.id);
+  const benefits = Array.isArray(s.benefits) ? s.benefits : [];
   return `
-    <div class="sub-row ${urgency} ${s.cancelled ? 'cancelled' : ''}">
-      <span class="row-dot" style="background:${dotColor}"></span>
-      <div class="row-main">
-        <div class="row-name ${s.cancelled ? 'strike' : ''}">${escapeHtml(s.name)}</div>
-        <div class="row-meta">
-          <span>${s.cycle === 'annual' ? 'Annual' : 'Monthly'}</span>
-          <span class="dot-sep">·</span>
-          <span>${escapeHtml(paymentLabel(s))}</span>
-          ${s.flagCancel ? '<span class="tag">🔔 Cancel before renewal</span>' : ''}
+    <div class="sub-item">
+      <div class="sub-row ${urgency} ${s.cancelled ? 'cancelled' : ''}">
+        <span class="row-dot" style="background:${dotColor}"></span>
+        <div class="row-main">
+          <div class="row-name ${s.cancelled ? 'strike' : ''}">${escapeHtml(s.name)}</div>
+          <div class="row-meta">
+            <span>${s.cycle === 'annual' ? 'Annual' : 'Monthly'}</span>
+            <span class="dot-sep">·</span>
+            <span>${escapeHtml(paymentLabel(s))}</span>
+            ${s.flagCancel ? '<span class="tag">🔔 Cancel before renewal</span>' : ''}
+            ${benefits.length ? `<button type="button" class="benefit-tag" onclick="toggleBenefits('${s.id}')">🎁 Benefits (${benefits.length})</button>` : ''}
+          </div>
+        </div>
+        <div class="row-renewal">
+          <div class="rdate">${fmtDate(s.renewalDate)}</div>
+          ${duePill}
+        </div>
+        <div class="row-amount ${s.amount === 0 ? 'free' : ''}">${s.amount === 0 ? 'Free' : fmtMoney(s.amount) + (s.cycle === 'annual' ? '/yr' : '/mo')}</div>
+        <div class="row-actions">
+          <label class="cancel-check" title="Mark cancelled">
+            <input type="checkbox" ${s.cancelled ? 'checked' : ''} onchange="toggleCancelled('${s.id}', this.checked)" />
+            <span class="cc-label">Cancelled</span>
+          </label>
+          <button class="icon-btn" title="Edit" onclick="openForm('${s.id}')">✏️</button>
+          <button class="icon-btn" title="Delete" onclick="deleteSub('${s.id}')">🗑️</button>
         </div>
       </div>
-      <div class="row-renewal">
-        <div class="rdate">${fmtDate(s.renewalDate)}</div>
-        ${duePill}
-      </div>
-      <div class="row-amount ${s.amount === 0 ? 'free' : ''}">${s.amount === 0 ? 'Free' : fmtMoney(s.amount) + (s.cycle === 'annual' ? '/yr' : '/mo')}</div>
-      <div class="row-actions">
-        <label class="cancel-check" title="Mark cancelled">
-          <input type="checkbox" ${s.cancelled ? 'checked' : ''} onchange="toggleCancelled('${s.id}', this.checked)" />
-          <span class="cc-label">Cancelled</span>
-        </label>
-        <button class="icon-btn" title="Edit" onclick="openForm('${s.id}')">✏️</button>
-        <button class="icon-btn" title="Delete" onclick="deleteSub('${s.id}')">🗑️</button>
-      </div>
+      ${benefits.length ? `
+        <div class="benefits-panel" id="benefits-${s.id}">
+          <div class="benefits-title">What this sub gets you</div>
+          <div class="benefits-chips">${benefits.map(b => `<span class="benefit-chip">${escapeHtml(b)}</span>`).join('')}</div>
+        </div>
+      ` : ''}
     </div>`;
+}
+function toggleBenefits(id) {
+  const panel = document.getElementById('benefits-' + id);
+  if (panel) panel.classList.toggle('open');
 }
 function escapeHtml(str) {
   const d = document.createElement('div');
@@ -449,13 +527,25 @@ function openForm(id) {
   document.getElementById('f-payname').value = s ? (s.payName || '') : '';
   document.getElementById('f-date').value = s ? s.renewalDate : '';
   document.getElementById('f-flag').checked = s ? !!s.flagCancel : false;
+  document.getElementById('f-benefits').value = s && Array.isArray(s.benefits) ? s.benefits.join('\n') : '';
   togglePayName();
+  checkBenefitSuggestion();
   document.getElementById('modalBg').classList.add('open');
   document.getElementById('f-name').focus();
+}
+function checkBenefitSuggestion() {
+  const match = findBenefitMatch(document.getElementById('f-name').value);
+  document.getElementById('f-suggest-btn').classList.toggle('hidden', !match);
+}
+function applySuggestedBenefits() {
+  const match = findBenefitMatch(document.getElementById('f-name').value);
+  if (!match) return;
+  document.getElementById('f-benefits').value = match.join('\n');
 }
 function closeForm() {
   document.getElementById('modalBg').classList.remove('open');
   document.getElementById('subForm').reset();
+  document.getElementById('f-suggest-btn').classList.add('hidden');
   editingId = null;
 }
 function submitForm(e) {
@@ -468,6 +558,7 @@ function submitForm(e) {
     payName: document.getElementById('f-payname').value.trim(),
     renewalDate: document.getElementById('f-date').value,
     flagCancel: document.getElementById('f-flag').checked,
+    benefits: document.getElementById('f-benefits').value.split('\n').map(x => x.trim()).filter(Boolean),
   };
   if (!data.name || !data.renewalDate) return;
 
