@@ -79,6 +79,13 @@
   .section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 22px 0 10px; }
   .empty-state { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 0.9rem; background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--border); }
 
+  /* ── segmented frames: annual / monthly / free trial ── */
+  .group-frame { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 14px 16px; margin-bottom: 14px; }
+  .group-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; padding: 0 2px; }
+  .group-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; }
+  .group-total { font-size: 0.8rem; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+  .group-frame .sub-row { background: var(--surface); }
+
   /* ── subscription rows ── */
   .sub-list { display: flex; flex-direction: column; gap: 8px; }
   .sub-row {
@@ -153,8 +160,7 @@
     <button class="btn" onclick="openForm()">+ Add Subscription</button>
   </div>
 
-  <div class="section-label" id="activeLabel">Active</div>
-  <div class="sub-list" id="activeList"></div>
+  <div id="activeGroups"></div>
 
   <div id="cancelledWrap"></div>
 </div>
@@ -330,14 +336,30 @@ function renderSpendChart() {
       `).join('')}
     </div>`;
 }
+function byUrgency(a, b) { return daysUntil(a.renewalDate) - daysUntil(b.renewalDate); }
 function renderLists() {
-  const active = subs.filter(s => !s.cancelled).sort((a,b) => daysUntil(a.renewalDate) - daysUntil(b.renewalDate));
+  const active = subs.filter(s => !s.cancelled);
   const cancelled = subs.filter(s => s.cancelled);
 
-  document.getElementById('activeLabel').textContent = `Active (${active.length})`;
-  document.getElementById('activeList').innerHTML = active.length
-    ? active.map(rowHtml).join('')
-    : `<div class="empty-state">No subscriptions yet — add your first one above.</div>`;
+  const annual = active.filter(s => s.amount > 0 && s.cycle === 'annual').sort(byUrgency);
+  const monthly = active.filter(s => s.amount > 0 && s.cycle === 'monthly').sort(byUrgency);
+  const trials = active.filter(s => s.amount === 0).sort(byUrgency);
+
+  const groups = [
+    { title: '📆 Annual Renewals', items: annual, total: annual.length ? fmtMoney(annual.reduce((sum,s) => sum + s.amount, 0)) + '/yr total' : '' },
+    { title: '🔁 Monthly Renewals', items: monthly, total: monthly.length ? fmtMoney(monthly.reduce((sum,s) => sum + s.amount, 0)) + '/mo total' : '' },
+    { title: '🆓 Free Trials', items: trials, total: '' },
+  ].filter(g => g.items.length);
+
+  document.getElementById('activeGroups').innerHTML = groups.length ? groups.map(g => `
+    <div class="group-frame">
+      <div class="group-header">
+        <div class="group-title">${g.title} (${g.items.length})</div>
+        ${g.total ? `<div class="group-total">${g.total}</div>` : ''}
+      </div>
+      <div class="sub-list">${g.items.map(rowHtml).join('')}</div>
+    </div>
+  `).join('') : `<div class="empty-state">No subscriptions yet — add your first one above.</div>`;
 
   const wrap = document.getElementById('cancelledWrap');
   wrap.innerHTML = cancelled.length ? `
