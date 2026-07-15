@@ -15,10 +15,22 @@
     --accent2: #6366f1;
     --text: #eef1f6;
     --muted: #8b94a7;
-    --green: #22c55e;
-    --amber: #f59e0b;
-    --red: #ef4444;
     --radius: 14px;
+
+    /* categorical identity colors — fixed order, never cycled/reassigned by rank */
+    --series-1: #3987e5; /* blue */
+    --series-2: #199e70; /* aqua */
+    --series-3: #c98500; /* yellow */
+    --series-4: #008300; /* green */
+    --series-5: #9085e9; /* violet */
+    --series-6: #e66767; /* red */
+    --series-7: #d55181; /* magenta */
+    --series-8: #d95926; /* orange */
+
+    /* status colors — reserved for renewal urgency, never reused as identity */
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-critical: #d03b3b;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -34,50 +46,77 @@
   header h1 span { color: var(--accent); }
   .summary { display: flex; gap: 10px; flex-wrap: wrap; }
   .summary .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; text-align: center; min-width: 90px; }
-  .summary .stat .val { font-size: 1.1rem; font-weight: 800; }
+  .summary .stat .val { font-size: 1.1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
   .summary .stat .lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
 
-  .banner { background: linear-gradient(135deg, rgba(245,158,11,0.14), rgba(239,68,68,0.1)); border: 1.5px solid rgba(245,158,11,0.4); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 18px; }
+  .banner { background: linear-gradient(135deg, rgba(250,178,25,0.14), rgba(208,59,59,0.1)); border: 1.5px solid rgba(250,178,25,0.4); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 18px; }
   .banner-title { font-weight: 800; font-size: 0.92rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
   .banner-item { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.18); border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; }
   .banner-item:last-child { margin-bottom: 0; }
   .banner-item .bname { flex: 1; font-size: 0.86rem; font-weight: 600; }
-  .banner-item .bdue { font-size: 0.74rem; padding: 3px 9px; border-radius: 99px; font-weight: 700; white-space: nowrap; }
-  .bdue.urgent { background: rgba(239,68,68,0.2); color: var(--red); }
-  .bdue.soon { background: rgba(245,158,11,0.2); color: var(--amber); }
-  .banner-item button { border: none; background: var(--green); color: #06210f; font-weight: 700; font-size: 0.74rem; padding: 6px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+  .bdue { font-size: 0.74rem; padding: 3px 9px; border-radius: 99px; font-weight: 700; white-space: nowrap; }
+  .bdue.critical { background: rgba(208,59,59,0.2); color: var(--status-critical); }
+  .bdue.warning { background: rgba(250,178,25,0.2); color: var(--status-warning); }
+  .banner-item button { border: none; background: var(--status-good); color: #06210f; font-weight: 700; font-size: 0.74rem; padding: 6px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+
+  /* ── spend breakdown chart ── */
+  .spend-chart { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; }
+  .spend-chart h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 700; margin-bottom: 14px; }
+  .spend-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .spend-row:last-child { margin-bottom: 0; }
+  .spend-label { width: 140px; flex-shrink: 0; font-size: 0.8rem; display: flex; align-items: flex-start; gap: 7px; line-height: 1.3; }
+  .spend-label .row-dot { margin-top: 4px; }
+  .spend-track { flex: 1; background: var(--surface2); border-radius: 4px; height: 18px; overflow: hidden; }
+  .spend-fill { height: 100%; border-radius: 0 4px 4px 0; }
+  .spend-value { width: 62px; text-align: right; font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
   .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
   .btn { border: none; border-radius: 10px; padding: 11px 18px; font-weight: 700; font-size: 0.9rem; cursor: pointer; background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #06101c; transition: opacity 0.15s, transform 0.1s; }
   .btn:hover { opacity: 0.9; }
   .btn:active { transform: scale(0.98); }
   .btn-secondary { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
-  .btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1.5px solid rgba(239,68,68,0.35); }
-  .btn-small { padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; }
 
   .section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 22px 0 10px; }
-  .sub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
   .empty-state { text-align: center; color: var(--muted); padding: 40px 20px; font-size: 0.9rem; background: var(--surface); border-radius: var(--radius); border: 1px dashed var(--border); }
 
-  .card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; position: relative; transition: border-color 0.15s; }
-  .card.flagged { border-color: rgba(245,158,11,0.4); }
-  .card.cancelled { opacity: 0.55; }
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
-  .card-name { font-weight: 800; font-size: 1rem; line-height: 1.3; }
-  .card-name.strike { text-decoration: line-through; }
-  .card-price { font-size: 1.05rem; font-weight: 800; color: var(--accent); white-space: nowrap; }
-  .card-price.free { color: var(--green); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; }
-  .card-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-  .tag { font-size: 0.68rem; padding: 3px 9px; border-radius: 99px; background: rgba(255,255,255,0.06); color: var(--muted); border: 1px solid var(--border); }
-  .tag.flag { background: rgba(245,158,11,0.15); color: var(--amber); border-color: rgba(245,158,11,0.3); }
-  .card-renewal { font-size: 0.8rem; color: var(--muted); margin-bottom: 12px; }
-  .card-renewal strong { color: var(--text); }
-  .card-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .cancel-check { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); cursor: pointer; user-select: none; }
+  /* ── subscription rows ── */
+  .sub-list { display: flex; flex-direction: column; gap: 8px; }
+  .sub-row {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--surface); border: 1.5px solid var(--border); border-left: 3px solid var(--border);
+    border-radius: 12px; padding: 12px 16px; transition: border-color 0.15s;
+  }
+  .sub-row.urgency-warning { border-left-color: var(--status-warning); }
+  .sub-row.urgency-critical { border-left-color: var(--status-critical); }
+  .sub-row.cancelled { opacity: 0.5; }
+  .row-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .row-main { flex: 1 1 160px; min-width: 0; }
+  .row-name { font-weight: 700; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-name.strike { text-decoration: line-through; color: var(--muted); }
+  .row-meta { font-size: 0.72rem; color: var(--muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+  .row-meta .dot-sep { opacity: 0.5; }
+  .tag { font-size: 0.66rem; padding: 2px 8px; border-radius: 99px; background: rgba(250,178,25,0.15); color: var(--status-warning); border: 1px solid rgba(250,178,25,0.3); }
+  .row-renewal { text-align: right; min-width: 92px; flex-shrink: 0; }
+  .row-renewal .rdate { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .due-pill { font-size: 0.66rem; padding: 2px 8px; border-radius: 99px; font-weight: 700; display: inline-block; margin-top: 3px; }
+  .due-pill.critical { background: rgba(208,59,59,0.18); color: var(--status-critical); }
+  .due-pill.warning { background: rgba(250,178,25,0.18); color: var(--status-warning); }
+  .row-amount { text-align: right; min-width: 76px; flex-shrink: 0; font-weight: 800; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+  .row-amount.free { color: var(--status-good); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; }
+  .row-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .cancel-check { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--muted); cursor: pointer; user-select: none; }
   .cancel-check input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
-  .card-icons { display: flex; gap: 6px; }
-  .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.95rem; padding: 4px; border-radius: 6px; }
+  .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 4px; border-radius: 6px; }
   .icon-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+  @media (max-width: 640px) {
+    .sub-row { flex-wrap: wrap; }
+    .row-main { flex-basis: 100%; order: 1; }
+    .row-renewal { text-align: left; order: 2; margin-right: auto; }
+    .row-amount { order: 3; }
+    .row-actions { order: 4; }
+    .cc-label { display: none; }
+  }
 
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
   .modal-bg.open { display: flex; }
@@ -108,12 +147,14 @@
 
   <div id="reminderBanner"></div>
 
+  <div id="spendChart"></div>
+
   <div class="toolbar">
     <button class="btn" onclick="openForm()">+ Add Subscription</button>
   </div>
 
-  <div class="section-label">Active</div>
-  <div class="sub-grid" id="activeList"></div>
+  <div class="section-label" id="activeLabel">Active</div>
+  <div class="sub-list" id="activeList"></div>
 
   <div id="cancelledWrap"></div>
 </div>
@@ -169,6 +210,7 @@
 <script>
 const STORAGE_KEY = 'subtracker.subscriptions.v1';
 const REMINDER_DAYS = 7;
+const SERIES_VARS = ['--series-1','--series-2','--series-3','--series-4','--series-5','--series-6','--series-7','--series-8'];
 let subs = [];
 let editingId = null;
 
@@ -223,11 +265,18 @@ function paymentLabel(s) {
   return s.payType === 'directdeposit' ? 'Direct Deposit' : (s.payName ? s.payName : 'Credit Card');
 }
 function monthlyEquivalent(s) { return s.cycle === 'annual' ? s.amount / 12 : s.amount; }
+// stable per-subscription identity color — hashed from id, not list position, so it never shifts on sort/filter
+function seriesColor(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return `var(${SERIES_VARS[h % SERIES_VARS.length]})`;
+}
 
 // ── rendering ──
 function render() {
   renderSummary();
   renderBanner();
+  renderSpendChart();
   renderLists();
 }
 function renderSummary() {
@@ -253,7 +302,7 @@ function renderBanner() {
       ${upcoming.map(s => {
         const d = daysUntil(s.renewalDate);
         const label = d <= 0 ? 'Renews today' : d === 1 ? '1 day left' : `${d} days left`;
-        const cls = d <= 2 ? 'urgent' : 'soon';
+        const cls = d <= 2 ? 'critical' : 'warning';
         return `<div class="banner-item">
           <span class="bname">${escapeHtml(s.name)} <span style="color:var(--muted);font-weight:400">· ${fmtDate(s.renewalDate)}</span></span>
           <span class="bdue ${cls}">${label}</span>
@@ -262,44 +311,70 @@ function renderBanner() {
       }).join('')}
     </div>`;
 }
+function renderSpendChart() {
+  const el = document.getElementById('spendChart');
+  const paid = subs.filter(s => !s.cancelled && s.amount > 0)
+    .map(s => ({ ...s, m: monthlyEquivalent(s) }))
+    .sort((a,b) => b.m - a.m);
+  if (paid.length === 0) { el.innerHTML = ''; return; }
+  const max = paid[0].m;
+  el.innerHTML = `
+    <div class="spend-chart">
+      <h3>Monthly Spend Breakdown</h3>
+      ${paid.map(s => `
+        <div class="spend-row">
+          <div class="spend-label"><span class="row-dot" style="background:${seriesColor(s.id)}"></span>${escapeHtml(s.name)}</div>
+          <div class="spend-track"><div class="spend-fill" style="width:${Math.max(4, s.m/max*100)}%;background:${seriesColor(s.id)}"></div></div>
+          <div class="spend-value">${fmtMoney(s.m)}</div>
+        </div>
+      `).join('')}
+    </div>`;
+}
 function renderLists() {
   const active = subs.filter(s => !s.cancelled).sort((a,b) => daysUntil(a.renewalDate) - daysUntil(b.renewalDate));
   const cancelled = subs.filter(s => s.cancelled);
 
+  document.getElementById('activeLabel').textContent = `Active (${active.length})`;
   document.getElementById('activeList').innerHTML = active.length
-    ? active.map(cardHtml).join('')
-    : `<div class="empty-state" style="grid-column:1/-1">No subscriptions yet — add your first one above.</div>`;
+    ? active.map(rowHtml).join('')
+    : `<div class="empty-state">No subscriptions yet — add your first one above.</div>`;
 
   const wrap = document.getElementById('cancelledWrap');
   wrap.innerHTML = cancelled.length ? `
     <div class="section-label">Cancelled (${cancelled.length})</div>
-    <div class="sub-grid">${cancelled.map(cardHtml).join('')}</div>
+    <div class="sub-list">${cancelled.map(rowHtml).join('')}</div>
   ` : '';
 }
-function cardHtml(s) {
+function rowHtml(s) {
   const d = daysUntil(s.renewalDate);
-  const dueLabel = s.cancelled ? '' : (d < 0 ? `overdue` : d === 0 ? 'today' : d === 1 ? 'in 1 day' : `in ${d} days`);
+  const urgency = s.cancelled ? '' : d <= 2 ? 'urgency-critical' : d <= 7 ? 'urgency-warning' : '';
+  const dueLabel = d < 0 ? 'Overdue' : d === 0 ? 'Today' : d === 1 ? '1 day' : `${d} days`;
+  const duePill = !s.cancelled && d <= 7 ? `<span class="due-pill ${d<=2?'critical':'warning'}">${dueLabel}</span>` : '';
+  const dotColor = s.cancelled ? 'var(--muted)' : seriesColor(s.id);
   return `
-    <div class="card ${s.flagCancel && !s.cancelled ? 'flagged' : ''} ${s.cancelled ? 'cancelled' : ''}">
-      <div class="card-top">
-        <div class="card-name ${s.cancelled ? 'strike' : ''}">${escapeHtml(s.name)}</div>
-        <div class="card-price ${s.amount === 0 ? 'free' : ''}">${s.amount === 0 ? 'Free trial' : fmtMoney(s.amount) + (s.cycle === 'annual' ? '/yr' : '/mo')}</div>
-      </div>
-      <div class="card-meta">
-        <span class="tag">${s.cycle === 'annual' ? 'Annual' : 'Monthly'}</span>
-        <span class="tag">${escapeHtml(paymentLabel(s))}</span>
-        ${s.flagCancel ? '<span class="tag flag">🔔 Cancel before renewal</span>' : ''}
-      </div>
-      <div class="card-renewal">Renews <strong>${fmtDate(s.renewalDate)}</strong>${dueLabel ? ` · ${dueLabel}` : ''}</div>
-      <div class="card-actions">
-        <label class="cancel-check">
-          <input type="checkbox" ${s.cancelled ? 'checked' : ''} onchange="toggleCancelled('${s.id}', this.checked)" />
-          Cancelled
-        </label>
-        <div class="card-icons">
-          <button class="icon-btn" title="Edit" onclick="openForm('${s.id}')">✏️</button>
-          <button class="icon-btn" title="Delete" onclick="deleteSub('${s.id}')">🗑️</button>
+    <div class="sub-row ${urgency} ${s.cancelled ? 'cancelled' : ''}">
+      <span class="row-dot" style="background:${dotColor}"></span>
+      <div class="row-main">
+        <div class="row-name ${s.cancelled ? 'strike' : ''}">${escapeHtml(s.name)}</div>
+        <div class="row-meta">
+          <span>${s.cycle === 'annual' ? 'Annual' : 'Monthly'}</span>
+          <span class="dot-sep">·</span>
+          <span>${escapeHtml(paymentLabel(s))}</span>
+          ${s.flagCancel ? '<span class="tag">🔔 Cancel before renewal</span>' : ''}
         </div>
+      </div>
+      <div class="row-renewal">
+        <div class="rdate">${fmtDate(s.renewalDate)}</div>
+        ${duePill}
+      </div>
+      <div class="row-amount ${s.amount === 0 ? 'free' : ''}">${s.amount === 0 ? 'Free' : fmtMoney(s.amount) + (s.cycle === 'annual' ? '/yr' : '/mo')}</div>
+      <div class="row-actions">
+        <label class="cancel-check" title="Mark cancelled">
+          <input type="checkbox" ${s.cancelled ? 'checked' : ''} onchange="toggleCancelled('${s.id}', this.checked)" />
+          <span class="cc-label">Cancelled</span>
+        </label>
+        <button class="icon-btn" title="Edit" onclick="openForm('${s.id}')">✏️</button>
+        <button class="icon-btn" title="Delete" onclick="deleteSub('${s.id}')">🗑️</button>
       </div>
     </div>`;
 }
